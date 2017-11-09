@@ -25,6 +25,11 @@
 #   TARGET_KERNEL_VARIANT_CONFIG       = Variant defconfig, optional
 #   TARGET_KERNEL_SELINUX_CONFIG       = SELinux defconfig, optional
 #   TARGET_KERNEL_ADDITIONAL_CONFIG    = Additional defconfig, optional
+#   TARGET_KERNEL_ARCH                 = Kernel Arch
+#   TARGET_KERNEL_CROSS_COMPILE_PREFIX = Compiler prefix (e.g. arm-eabi-)
+#                                          defaults to arm-linux-androidkernel- for arm
+#                                                      aarch64-linux-androidkernel- for arm64
+#                                                      x86_64-linux-androidkernel- for x86
 #
 #   TARGET_KERNEL_CLANG_COMPILE        = Compile kernel with clang, defaults to false
 #
@@ -66,6 +71,16 @@ SELINUX_DEFCONFIG := $(TARGET_KERNEL_SELINUX_CONFIG)
 ## Internal variables
 KERNEL_OUT := $(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ
 KERNEL_CONFIG := $(KERNEL_OUT)/.config
+<<<<<<< HEAD
+=======
+
+TARGET_KERNEL_ARCH := $(strip $(TARGET_KERNEL_ARCH))
+ifeq ($(TARGET_KERNEL_ARCH),)
+KERNEL_ARCH := $(TARGET_ARCH)
+else
+KERNEL_ARCH := $(TARGET_KERNEL_ARCH)
+endif
+>>>>>>> abb082f... lineage: build: kernel: Rework kernel header logic
 
 ifeq ($(KERNEL_ARCH),x86_64)
 KERNEL_DEFCONFIG_ARCH := x86
@@ -145,6 +160,9 @@ endif
 
 ifeq ($(FULL_KERNEL_BUILD),true)
 
+KERNEL_HEADERS_INSTALL_DIR := $(KERNEL_OUT)/usr
+KERNEL_HEADERS_INSTALL_DEPS := $(KERNEL_OUT)/.headers_install_deps
+
 ifeq ($(NEED_KERNEL_MODULE_ROOT),true)
 KERNEL_MODULES_INSTALL := root
 KERNEL_MODULES_OUT := $(TARGET_ROOT_OUT)/lib/modules
@@ -198,6 +216,7 @@ $(KERNEL_CONFIG): $(KERNEL_DEFCONFIG_SRC) $(KERNEL_ADDITIONAL_CONFIG_OUT)
 	@echo "Building Kernel Config"
 	$(hide) mkdir -p $(KERNEL_OUT)
 	$(PATH_OVERRIDE) $(MAKE) $(KERNEL_MAKE_FLAGS) -C $(KERNEL_SRC) O=$(KERNEL_OUT) ARCH=$(KERNEL_ARCH) $(KERNEL_CROSS_COMPILE) $(KERNEL_CLANG_TRIPLE) $(KERNEL_CC) VARIANT_DEFCONFIG=$(VARIANT_DEFCONFIG) SELINUX_DEFCONFIG=$(SELINUX_DEFCONFIG) $(KERNEL_DEFCONFIG)
+	$(MAKE) $(MAKE_FLAGS) -C $(KERNEL_SRC) O=$(KERNEL_OUT) ARCH=$(KERNEL_ARCH) $(KERNEL_CROSS_COMPILE) $(KERNEL_CLANG_TRIPLE) $(KERNEL_CC) VARIANT_DEFCONFIG=$(VARIANT_DEFCONFIG) SELINUX_DEFCONFIG=$(SELINUX_DEFCONFIG) $(KERNEL_DEFCONFIG)
 	$(hide) if [ ! -z "$(KERNEL_CONFIG_OVERRIDE)" ]; then \
 			echo "Overriding kernel config with '$(KERNEL_CONFIG_OVERRIDE)'"; \
 			echo $(KERNEL_CONFIG_OVERRIDE) >> $(KERNEL_OUT)/.config; \
@@ -216,6 +235,7 @@ TARGET_KERNEL_BINARIES: $(KERNEL_CONFIG)
 	$(hide) mkdir -p $(KERNEL_MODULES_OUT)
 	$(hide) rm -rf $(KERNEL_DEPMOD_STAGING_DIR)
 	$(PATH_OVERRIDE) $(MAKE) $(KERNEL_MAKE_FLAGS) -C $(KERNEL_SRC) O=$(KERNEL_OUT) ARCH=$(KERNEL_ARCH) $(KERNEL_CROSS_COMPILE) $(KERNEL_CLANG_TRIPLE) $(KERNEL_CC) $(BOARD_KERNEL_IMAGE_NAME)
+	$(MAKE) $(MAKE_FLAGS) -C $(KERNEL_SRC) O=$(KERNEL_OUT) ARCH=$(KERNEL_ARCH) $(KERNEL_CROSS_COMPILE) $(KERNEL_CLANG_TRIPLE) $(KERNEL_CC) $(BOARD_KERNEL_IMAGE_NAME)
 	$(hide) if grep -q '^CONFIG_OF=y' $(KERNEL_CONFIG); then \
 			echo "Building DTBs"; \
 			$(PATH_OVERRIDE) $(MAKE) $(KERNEL_MAKE_FLAGS) -C $(KERNEL_SRC) O=$(KERNEL_OUT) ARCH=$(KERNEL_ARCH) $(KERNEL_CROSS_COMPILE) $(KERNEL_CLANG_TRIPLE) $(KERNEL_CC) dtbs; \
@@ -257,6 +277,74 @@ kerneltags: $(KERNEL_CONFIG)
 kernelsavedefconfig:
 	$(hide) mkdir -p $(KERNEL_OUT)
 	$(PATH_OVERRIDE) $(MAKE) $(KERNEL_MAKE_FLAGS) -C $(KERNEL_SRC) O=$(KERNEL_OUT) ARCH=$(KERNEL_ARCH) $(KERNEL_CROSS_COMPILE) $(KERNEL_CLANG_TRIPLE) $(KERNEL_CC) $(KERNEL_DEFCONFIG)
+# Install kernel (uapi) headers.
+#
+# The dependency file serves two purposes:
+#  - It is a stamp indicating when the headers were last installed.
+#  - It contains a rule to regenerate itself when any kernel header
+#    files change.  This rule is identical to the rule emitted by
+#    GCC using the M/MM flags.
+#
+# Note that the location of installed kernel headers changed when the
+# kernel uapi system was introduced in 3.7.  Unfortunately, it is not
+# sufficient to test whether the uapi directories exist because some
+# kernels backport patches that contain uapi headers.  So we look for
+# the string "version_h" in the kernel makefile which was introduced
+# as a part of the uapi system (commit d183e6f570f3).
+-include $(KERNEL_HEADERS_INSTALL_DEPS)
+$(KERNEL_HEADERS_INSTALL_DEPS):
+	@echo "Building Kernel Headers"
+	$(hide) mkdir -p $(KERNEL_OUT)
+	$(hide) rm -f $@
+	$(hide) $(MAKE) $(MAKE_FLAGS) -C $(KERNEL_SRC) O=$(KERNEL_OUT) ARCH=$(KERNEL_ARCH) $(KERNEL_CROSS_COMPILE) $(KERNEL_CLANG_TRIPLE) $(KERNEL_CC) headers_install
+	$(hide) echo "$@: \\" > $@
+	$(hide) ( cd $(KERNEL_SRC); \
+		if grep -q '^version_h' 'Makefile'; then \
+			depdirs="arch/$(KERNEL_ARCH)/include/uapi include/uapi"; \
+		else \
+			depdirs="arch/$(KERNEL_ARCH)/include/asm include"; \
+		fi; \
+		deps="Makefile $$(find $$depdirs -type f -name '*.h')"; \
+		for f in $$deps; do \
+			echo "  $(KERNEL_SRC)/$$f \\" >> $@; \
+		done ; \
+		echo "" >> $@ ; \
+		for f in $$deps; do \
+			echo "$(KERNEL_SRC)/$$f:" >> $@; \
+			echo "" >> $@; \
+		done \
+		)
+
+.PHONY: INSTALLED_KERNEL_HEADERS
+INSTALLED_KERNEL_HEADERS: $(KERNEL_HEADERS_INSTALL_DEPS)
+
+# Dependencies on $(KERNEL_OUT)/usr are deprecated
+$(KERNEL_HEADERS_INSTALL_DIR): $(KERNEL_HEADERS_INSTALL_DEPS)
+	@echo "Depending on $(KERNEL_HEADERS_INSTALL_DIR) is deprecated." 1>&2
+	@echo "Use INSTALLED_KERNEL_HEADERS instead." 1>&2
+	@exit 1
+
+.PHONY: kerneltags
+kerneltags: $(KERNEL_CONFIG)
+	$(hide) mkdir -p $(KERNEL_OUT)
+	$(MAKE) -C $(KERNEL_SRC) O=$(KERNEL_OUT) ARCH=$(KERNEL_ARCH) $(KERNEL_CROSS_COMPILE) $(KERNEL_CLANG_TRIPLE) $(KERNEL_CC) tags
+
+.PHONY: kernelconfig kernelxconfig kernelsavedefconfig alldefconfig
+
+kernelconfig:  KERNELCONFIG_MODE := menuconfig
+kernelxconfig: KERNELCONFIG_MODE := xconfig
+kernelxconfig kernelconfig:
+	$(hide) mkdir -p $(KERNEL_OUT)
+	$(MAKE) $(MAKE_FLAGS) -C $(KERNEL_SRC) O=$(KERNEL_OUT) ARCH=$(KERNEL_ARCH) $(KERNEL_CROSS_COMPILE) $(KERNEL_CLANG_TRIPLE) $(KERNEL_CC) $(KERNEL_DEFCONFIG)
+	env KCONFIG_NOTIMESTAMP=true \
+		 $(MAKE) -C $(KERNEL_SRC) O=$(KERNEL_OUT) ARCH=$(KERNEL_ARCH) $(KERNEL_CROSS_COMPILE) $(KERNEL_CLANG_TRIPLE) $(KERNEL_CC) $(KERNELCONFIG_MODE)
+	env KCONFIG_NOTIMESTAMP=true \
+		 $(MAKE) -C $(KERNEL_SRC) O=$(KERNEL_OUT) ARCH=$(KERNEL_ARCH) $(KERNEL_CROSS_COMPILE) $(KERNEL_CLANG_TRIPLE) $(KERNEL_CC) savedefconfig
+	cp $(KERNEL_OUT)/defconfig $(KERNEL_DEFCONFIG_SRC)
+
+kernelsavedefconfig:
+	$(hide) mkdir -p $(KERNEL_OUT)
+	$(MAKE) $(MAKE_FLAGS) -C $(KERNEL_SRC) O=$(KERNEL_OUT) ARCH=$(KERNEL_ARCH) $(KERNEL_CROSS_COMPILE) $(KERNEL_CLANG_TRIPLE) $(KERNEL_CC) $(KERNEL_DEFCONFIG)
 	env KCONFIG_NOTIMESTAMP=true \
 		 $(PATH_OVERRIDE) $(MAKE) -C $(KERNEL_SRC) O=$(KERNEL_OUT) ARCH=$(KERNEL_ARCH) $(KERNEL_CROSS_COMPILE) $(KERNEL_CLANG_TRIPLE) $(KERNEL_CC) savedefconfig
 	cp $(KERNEL_OUT)/defconfig $(KERNEL_DEFCONFIG_SRC)
