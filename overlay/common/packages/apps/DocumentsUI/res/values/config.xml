@@ -14,11 +14,13 @@
      limitations under the License.
 -->
 
+<!-- Phone app resources that may need to be customized
+     for different hardware or product builds. -->
 <resources>
-
-    <!-- Flags setup as productivity oriented in which case Downloads app will be presented
-             as Files app. Including showing of the Documents and "advanced" roots. -->
-    <bool name="show_documents_root">true</bool>
-
-    <string name="default_root_uri" translatable="false">content://com.android.externalstorage.documents/root/primary</string>
+    <!-- Determine whether calls to mute the microphone in PhoneUtils
+         are routed through the android.media.AudioManager class (true) or through
+         the com.android.internal.telephony.Phone interface (false). -->
+    <bool name="send_mic_mute_to_AudioManager">true</bool>
+     <!-- Show enabled lte option for lte device -->
+    <bool name="config_enabled_lte" translatable="false">true</bool>
 </resources>

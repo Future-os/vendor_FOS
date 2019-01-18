@@ -1,5 +1,5 @@
 # Bring in Qualcomm helper macros
-include vendor/lineage/build/core/qcom_utils.mk
+include vendor/future/build/core/qcom_utils.mk
 
 define wlan-set-path-variant
 $(call project-set-path-variant,wlan,TARGET_WLAN_VARIANT,hardware/qcom/$(1))
@@ -19,11 +19,11 @@ $(call project-set-path,qcom-$(2),$(strip $(path)))
 endef
 
 ifeq ($(BOARD_USES_QCOM_HARDWARE),true)
+BOARD_USES_QTI_HARDWARE := true
 
 $(call set-device-specific-path,AUDIO,audio,hardware/qcom/audio-caf/$(QCOM_HARDWARE_VARIANT))
 $(call set-device-specific-path,DISPLAY,display,hardware/qcom/display-caf/$(QCOM_HARDWARE_VARIANT))
 $(call set-device-specific-path,MEDIA,media,hardware/qcom/media-caf/$(QCOM_HARDWARE_VARIANT))
-
 $(call set-device-specific-path,CAMERA,camera,hardware/qcom/camera)
 $(call set-device-specific-path,DATA_IPA_CFG_MGR,data-ipa-cfg-mgr,vendor/qcom/opensource/data-ipa-cfg-mgr)
 $(call set-device-specific-path,GPS,gps,hardware/qcom/gps)
@@ -34,7 +34,12 @@ $(call set-device-specific-path,POWER,power,hardware/qcom/power)
 $(call set-device-specific-path,THERMAL,thermal,hardware/qcom/thermal)
 $(call set-device-specific-path,VR,vr,hardware/qcom/vr)
 
+ifeq ($(BOARD_USES_AOSP_WLAN_HAL),true)
+$(call wlan-set-path-variant,wlan)
+else
 $(call wlan-set-path-variant,wlan-caf)
+endif
+
 $(call bt-vendor-set-path-variant,bt-caf)
 
 PRODUCT_CFI_INCLUDE_PATHS += \
