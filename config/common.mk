@@ -178,3 +178,8 @@ PRODUCT_SYSTEM_DEFAULT_PROPERTIES += \
 
 PRODUCT_ENFORCE_RRO_EXCLUDED_OVERLAYS += vendor/future/overlay
 DEVICE_PACKAGE_OVERLAYS += vendor/future/overlay/common
+
+# Future-OS Branding
+include vendor/future/config/branding.mk
+# Bootanimation
+include vendor/future/config/bootanimation.mk
