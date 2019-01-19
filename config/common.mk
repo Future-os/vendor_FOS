@@ -2,7 +2,6 @@ PRODUCT_BRAND ?= Future-OS
 
 PRODUCT_BUILD_PROP_OVERRIDES += BUILD_UTC_DATE=0
 
-	
 EXCLUDE_SYSTEMUI_TESTS := true
 
 PRODUCT_SYSTEM_DEFAULT_PROPERTIES += \
@@ -25,7 +24,7 @@ PRODUCT_PROPERTY_OVERRIDES := \
     persist.sys.wfd.virtual=0 \
     persist.debug.wfd.enable=1 \
     persist.sys.wfd.virtual=0
-	
+
 # Default notification/alarm sounds
 PRODUCT_SYSTEM_DEFAULT_PROPERTIES += \
     ro.config.notification_sound=Argon.ogg \
@@ -71,7 +70,7 @@ PRODUCT_COPY_FILES += \
 
 # Copy all Future-specific init rc files
 $(foreach f,$(wildcard vendor/future/prebuilt/common/etc/init/*.rc),\
-	$(eval PRODUCT_COPY_FILES += $(f):system/etc/init/$(notdir $f))
+	$(eval PRODUCT_COPY_FILES += $(f):system/etc/init/$(notdir $f)))
 
 # Copy over added mimetype supported in libcore.net.MimeUtils
 PRODUCT_COPY_FILES += \
