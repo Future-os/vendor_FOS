@@ -47,7 +47,7 @@ endif
 PRODUCT_COPY_FILES += \
     vendor/future/prebuilt/common/bin/backuptool.sh:install/bin/backuptool.sh \
     vendor/future/prebuilt/common/bin/backuptool.functions:install/bin/backuptool.functions \
-    vendor/future/prebuilt/common/bin/blacklist:system/addon.d/blacklist
+    vendor/future/prebuilt/common/bin/50-future.sh:system/addon.d/50-future.sh
 
 ifeq ($(AB_OTA_UPDATER),true)
 PRODUCT_COPY_FILES += \
@@ -90,7 +90,7 @@ PRODUCT_COPY_FILES += \
    
 # Enable wireless Xbox 360 controller support
 PRODUCT_COPY_FILES += \
-frameworks/base/data/keyboards/Vendor_045e_Product_028e.kl:system/usr/keylayout/Vendor_045e_Product_0719.kl
+ frameworks/base/data/keyboards/Vendor_045e_Product_028e.kl:system/usr/keylayout/Vendor_045e_Product_0719.kl
 
 # Power whitelist
 PRODUCT_COPY_FILES += \
@@ -98,7 +98,7 @@ PRODUCT_COPY_FILES += \
 
 # Fix Google dialer
 PRODUCT_COPY_FILES += \
-    vendor/havoc/prebuilt/common/etc/sysconfig/dialer_experience.xml:system/etc/sysconfig/dialer_experience.xml
+    vendor/future/prebuilt/common/etc/sysconfig/dialer_experience.xml:system/etc/sysconfig/dialer_experience.xml
 # Exchange support
 PRODUCT_PACKAGES += \
     Exchange2
@@ -106,12 +106,12 @@ PRODUCT_PACKAGES += \
 # Latin IME lib
 ifeq ($(TARGET_ARCH),arm64)
 PRODUCT_COPY_FILES += \
-    vendor/havoc/prebuilt/common/lib64/libjni_latinime.so:system/lib64/libjni_latinime.so \
-    vendor/havoc/prebuilt/common/lib64/libjni_latinimegoogle.so:system/lib64/libjni_latinimegoogle.so
+    vendor/future/prebuilt/common/lib64/libjni_latinime.so:system/lib64/libjni_latinime.so \
+    vendor/future/prebuilt/common/lib64/libjni_latinimegoogle.so:system/lib64/libjni_latinimegoogle.so
 else
 PRODUCT_COPY_FILES += \
-    vendor/havoc/prebuilt/common/lib/libjni_latinime.so:system/lib/libjni_latinime.so \
-    vendor/havoc/prebuilt/common/lib/libjni_latinimegoogle.so:system/lib/libjni_latinimegoogle.so
+   #vendor/future/prebuilt/common/lib/libjni_latinime.so:system/lib/libjni_latinime.so \
+   #vendor/future/prebuilt/common/lib/libjni_latinimegoogle.so:system/lib/libjni_latinimegoogle.so
 endif
 
 # Extra tools in future
