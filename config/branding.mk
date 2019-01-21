@@ -25,12 +25,11 @@ FUTURE_VERSION := Future-OS-$(FUTURE_BASE_VERSION)-$(DATE)-$(FUTURE_BUILD)-$(FUT
 ROM_FINGERPRINT := Future-OS/$(FUTURE_BASE_VERSION)/$(PLATFORM_VERSION)/$(TARGET_PRODUCT_SHORT)/$(FUTURE_BUILD_DATE)
 
 PRODUCT_PROPERTIES_OVERRIDES := \
-    ro.future.base.version=$(FUTURE_BASE_SET_VERSION) \
+        BUILD_DISPLAY_ID=$(BUILD_ID) \
+        ro.future.base.version=$(FUTURE_BASE_SET_VERSION) \
 	ro.future.build.date=$(FUTURE_BUILD_DATE) \
 	ro.future.build.version=$(FUTURE_BUILD_VERSION) \
 	ro.future.fingerprint=$(ROM_FINGERPRINT)
 	ro.future.releasetype=$(FUTURE_BUILD_TYPE) \
 	ro.future.version=$(FUTURE_VERSION) \
-	ro.future.build.type=$(FUTURE_BUILD_TYPE) \
-	ro.future.maintainer=$(FUTURE_MOD_VERSION)
-	
+	ro.mod.version=$(FUTURE_MOD_VERSION)	
