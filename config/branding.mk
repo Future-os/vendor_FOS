@@ -33,3 +33,4 @@ PRODUCT_PROPERTIES_OVERRIDES := \
 	ro.future.releasetype=$(FUTURE_BUILD_TYPE) \
 	ro.future.version=$(FUTURE_VERSION) \
 	ro.mod.version=$(FUTURE_MOD_VERSION)	
+  	ro.havoc.maintainer=$(FUTURE_MAINTAINER)
